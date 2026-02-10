@@ -4,29 +4,61 @@ import Card from '../../components/common/Card';
 import Badge from '../../components/common/Badge';
 import Avatar from '../../components/common/Avatar';
 import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
 import { networkingAPI } from '../../api';
-
-const MATCH_DATA = [
-  { name: 'Emily Watson', role: 'ML Engineer', company: 'Google', match: 98, interests: ['AI/ML', 'Python', 'Cloud'], online: true, bio: 'Building next-gen ML infrastructure' },
-  { name: 'David Kim', role: 'CTO', company: 'StartupX', match: 94, interests: ['Architecture', 'Leadership', 'DevOps'], online: true, bio: 'Scaling engineering teams' },
-  { name: 'Sofia Rodriguez', role: 'Product Manager', company: 'Meta', match: 89, interests: ['Product Strategy', 'UX', 'Analytics'], online: false, bio: 'User-centric product development' },
-  { name: 'James Park', role: 'Senior Engineer', company: 'Netflix', match: 85, interests: ['Distributed Systems', 'Rust', 'Performance'], online: true, bio: 'Making streaming faster' },
-  { name: 'Lisa Chen', role: 'Data Scientist', company: 'Spotify', match: 82, interests: ['RecSys', 'NLP', 'Python'], online: false, bio: 'Personalization at scale' },
-  { name: 'Marcus Brown', role: 'VP Engineering', company: 'Stripe', match: 78, interests: ['FinTech', 'Team Building', 'Scale'], online: true, bio: 'Building payment infrastructure' },
-];
+import toast from 'react-hot-toast';
 
 export default function NetworkingMatching() {
-  const [matches, setMatches] = useState(MATCH_DATA);
+  const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState('all');
-  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const loadUsers = async () => {
+    try {
+      const params = {};
+      if (filter !== 'all') params.role = filter;
+      if (search.trim()) params.search = search.trim();
+      const res = await networkingAPI.allUsers(params);
+      setUsers(res.data.users || []);
+    } catch {
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    networkingAPI.matches('all').then((res) => {
-      if (res.data?.matches?.length) setMatches(res.data.matches);
-    }).catch(() => {});
-  }, []);
+    loadUsers();
+  }, [filter]);
 
-  const filtered = filter === 'online' ? matches.filter((m) => m.online) : matches;
+  useEffect(() => {
+    const timer = setTimeout(() => { if (search !== undefined) loadUsers(); }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const handleConnect = async (user) => {
+    setConnecting(user.user_id);
+    try {
+      await networkingAPI.connect({
+        target_user_id: user.user_id,
+        event_id: 'platform',
+        message: `Hi ${user.name}, I'd like to connect!`,
+      });
+      toast.success(`Connection request sent to ${user.name}`);
+      setUsers((prev) =>
+        prev.map((u) => u.user_id === user.user_id ? { ...u, connection_status: 'pending' } : u)
+      );
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send connection');
+    } finally {
+      setConnecting(null);
+    }
+  };
+
+  const roleColors = { organizer: 'primary', staff: 'blue', attendee: 'green', super_admin: 'red' };
 
   return (
     <DashboardLayout>
@@ -35,15 +67,33 @@ export default function NetworkingMatching() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-charcoal flex items-center gap-2">
-              <span className="material-icons text-primary">auto_awesome</span>
-              AI Networking & Matching
+              <span className="material-icons text-primary">hub</span>
+              Networking & Connections
             </h1>
             <p className="text-sm text-gray-500">
-              Intelligent connections based on your profile, interests, and goals
+              Discover and connect with attendees, organizers, and staff on the platform
             </p>
           </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="material-icons text-gray-400 text-lg">people</span>
+            <span className="text-gray-500">{users.length} users found</span>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">search</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, company, job title..."
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm placeholder:text-gray-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+            />
+          </div>
           <div className="flex gap-2">
-            {['all', 'online'].map((f) => (
+            {['all', 'attendee', 'organizer', 'staff'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -51,84 +101,150 @@ export default function NetworkingMatching() {
                   filter === f ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {f === 'online' && <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-1.5" />}
                 {f}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Network visualization placeholder */}
-        <Card className="p-6 bg-gradient-to-br from-primary/5 to-blue-500/5">
-          <div className="text-center py-8">
-            <div className="relative w-32 h-32 mx-auto mb-4">
-              <div className="absolute inset-0 border-2 border-dashed border-primary/30 rounded-full animate-spin" style={{ animationDuration: '20s' }} />
-              <div className="absolute inset-4 border-2 border-dashed border-blue-500/20 rounded-full animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                  <span className="material-icons text-white">person</span>
-                </div>
-              </div>
-              {/* Orbiting dots */}
-              {[0, 60, 120, 180, 240, 300].map((deg) => (
-                <div
-                  key={deg}
-                  className="absolute w-4 h-4 bg-primary/60 rounded-full"
-                  style={{
-                    top: `${50 + 45 * Math.sin((deg * Math.PI) / 180)}%`,
-                    left: `${50 + 45 * Math.cos((deg * Math.PI) / 180)}%`,
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                />
-              ))}
-            </div>
-            <p className="text-sm text-gray-500">
-              Analyzing <strong className="text-charcoal">1,248 attendees</strong> to find your best connections
-            </p>
+        {/* Loading state */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <span className="material-icons text-primary text-4xl animate-spin">refresh</span>
           </div>
-        </Card>
-
-        {/* Match cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((match) => (
-            <Card
-              key={match.name}
-              className="p-5 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setSelectedMatch(match)}
-            >
-              <div className="flex items-start gap-3 mb-4">
-                <div className="relative">
-                  <Avatar name={match.name} size="md" />
-                  {match.online && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+        ) : users.length === 0 ? (
+          <Card className="p-12 text-center">
+            <span className="material-icons text-gray-300 text-5xl mb-3">person_search</span>
+            <p className="text-gray-500">No users found. Try a different search or filter.</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {users.map((user) => (
+              <Card
+                key={user.user_id}
+                className="p-5 hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => setSelectedUser(user)}
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <Avatar name={user.name} src={user.avatar_url} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-charcoal truncate">{user.name}</h3>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.job_title ? `${user.job_title}` : ''}
+                      {user.job_title && user.company ? ' @ ' : ''}
+                      {user.company || ''}
+                    </p>
+                    {user.bio && <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{user.bio}</p>}
+                  </div>
+                  <Badge color={roleColors[user.role] || 'gray'} className="shrink-0 capitalize text-[10px]">
+                    {user.role?.replace('_', ' ')}
+                  </Badge>
+                </div>
+                {(user.interests?.length > 0 || user.skills?.length > 0) && (
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {[...(user.interests || []), ...(user.skills || [])].slice(0, 4).map((tag) => (
+                      <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-medium">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  {user.connection_status === 'connected' ? (
+                    <Button size="sm" variant="outline" className="flex-1 text-xs" disabled>
+                      <span className="material-icons text-xs mr-1">check_circle</span>
+                      Connected
+                    </Button>
+                  ) : user.connection_status === 'pending' ? (
+                    <Button size="sm" variant="outline" className="flex-1 text-xs" disabled>
+                      <span className="material-icons text-xs mr-1">schedule</span>
+                      Pending
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="flex-1 text-xs"
+                      loading={connecting === user.user_id}
+                      onClick={() => handleConnect(user)}
+                    >
+                      <span className="material-icons text-xs mr-1">person_add</span>
+                      Connect
+                    </Button>
                   )}
+                  <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                    <span className="material-icons text-gray-400 text-base">chat_bubble_outline</span>
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-charcoal truncate">{match.name}</h3>
-                  <p className="text-xs text-gray-500">{match.role} @ {match.company}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{match.bio}</p>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* User Detail Modal */}
+        <Modal isOpen={!!selectedUser} onClose={() => setSelectedUser(null)} title="User Profile" size="md">
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar name={selectedUser.name} src={selectedUser.avatar_url} size="lg" />
+                <div>
+                  <h3 className="text-lg font-bold text-charcoal">{selectedUser.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    {selectedUser.job_title}{selectedUser.company ? ` @ ${selectedUser.company}` : ''}
+                  </p>
+                  <Badge color={roleColors[selectedUser.role] || 'gray'} className="mt-1 capitalize">
+                    {selectedUser.role?.replace('_', ' ')}
+                  </Badge>
                 </div>
-                <Badge color="primary" className="shrink-0">{match.match}%</Badge>
               </div>
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {match.interests.map((tag) => (
-                  <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-medium">
-                    {tag}
-                  </span>
-                ))}
+              {selectedUser.bio && (
+                <div>
+                  <h4 className="text-sm font-semibold text-charcoal mb-1">About</h4>
+                  <p className="text-sm text-gray-600">{selectedUser.bio}</p>
+                </div>
+              )}
+              {selectedUser.industry && (
+                <div>
+                  <h4 className="text-sm font-semibold text-charcoal mb-1">Industry</h4>
+                  <p className="text-sm text-gray-600">{selectedUser.industry}</p>
+                </div>
+              )}
+              {(selectedUser.interests?.length > 0 || selectedUser.skills?.length > 0) && (
+                <div>
+                  <h4 className="text-sm font-semibold text-charcoal mb-2">Interests & Skills</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {[...(selectedUser.interests || []), ...(selectedUser.skills || [])].map((tag) => (
+                      <span key={tag} className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 pt-3 border-t border-gray-100">
+                {selectedUser.connection_status === 'connected' ? (
+                  <Button variant="outline" className="flex-1" disabled>
+                    <span className="material-icons text-sm mr-1">check_circle</span>
+                    Already Connected
+                  </Button>
+                ) : selectedUser.connection_status === 'pending' ? (
+                  <Button variant="outline" className="flex-1" disabled>
+                    <span className="material-icons text-sm mr-1">schedule</span>
+                    Request Pending
+                  </Button>
+                ) : (
+                  <Button
+                    className="flex-1"
+                    loading={connecting === selectedUser.user_id}
+                    onClick={() => handleConnect(selectedUser)}
+                  >
+                    <span className="material-icons text-sm mr-1">person_add</span>
+                    Send Connection Request
+                  </Button>
+                )}
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1 text-xs">
-                  <span className="material-icons text-xs mr-1">person_add</span>
-                  Connect
-                </Button>
-                <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                  <span className="material-icons text-gray-400 text-base">chat_bubble_outline</span>
-                </button>
-              </div>
-            </Card>
-          ))}
-        </div>
+            </div>
+          )}
+        </Modal>
       </div>
     </DashboardLayout>
   );

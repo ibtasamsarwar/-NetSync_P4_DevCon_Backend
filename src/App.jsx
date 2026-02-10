@@ -22,6 +22,7 @@ const CreateEvent = lazy(() => import('./pages/organizer/CreateEvent'));
 const SessionScheduler = lazy(() => import('./pages/organizer/SessionScheduler'));
 const BadgeDesigner = lazy(() => import('./pages/organizer/BadgeDesigner'));
 const BillingInvoices = lazy(() => import('./pages/organizer/BillingInvoices'));
+const EventsList = lazy(() => import('./pages/organizer/EventsList'));
 
 // ─── Attendee Pages ─────────────────────────────────────
 const PersonalHub = lazy(() => import('./pages/attendee/PersonalHub'));
@@ -31,6 +32,7 @@ const RegistrationTicketing = lazy(() => import('./pages/attendee/RegistrationTi
 
 // ─── Staff Pages ────────────────────────────────────────
 const StaffDashboard = lazy(() => import('./pages/staff/StaffDashboard'));
+const FaceAttendance = lazy(() => import('./pages/staff/FaceAttendance'));
 
 // ─── Admin Pages ────────────────────────────────────────
 const SuperAdminDashboard = lazy(() => import('./pages/admin/SuperAdminDashboard'));
@@ -125,8 +127,9 @@ export default function App() {
 
         {/* ── Organizer Routes ─────────────────────────── */}
         <Route path="/organizer/dashboard" element={<ProtectedRoute allowedRoles={['organizer', 'super_admin']}><AnalyticsDashboard /></ProtectedRoute>} />
+        <Route path="/organizer/events" element={<ProtectedRoute allowedRoles={['organizer', 'staff', 'super_admin']}><EventsList /></ProtectedRoute>} />
         <Route path="/organizer/events/create" element={<ProtectedRoute allowedRoles={['organizer', 'super_admin']}><CreateEvent /></ProtectedRoute>} />
-        <Route path="/organizer/sessions/scheduler" element={<ProtectedRoute allowedRoles={['organizer', 'super_admin']}><SessionScheduler /></ProtectedRoute>} />
+        <Route path="/organizer/sessions/scheduler" element={<ProtectedRoute allowedRoles={['organizer', 'staff', 'super_admin']}><SessionScheduler /></ProtectedRoute>} />
         <Route path="/organizer/badges/designer" element={<ProtectedRoute allowedRoles={['organizer', 'super_admin']}><BadgeDesigner /></ProtectedRoute>} />
         <Route path="/organizer/billing" element={<ProtectedRoute allowedRoles={['organizer', 'super_admin']}><BillingInvoices /></ProtectedRoute>} />
 
@@ -137,6 +140,7 @@ export default function App() {
 
         {/* ── Staff Routes ─────────────────────────────── */}
         <Route path="/staff/dashboard" element={<ProtectedRoute allowedRoles={['staff', 'super_admin']}><StaffDashboard /></ProtectedRoute>} />
+        <Route path="/staff/attendance" element={<ProtectedRoute allowedRoles={['staff', 'organizer', 'super_admin']}><FaceAttendance /></ProtectedRoute>} />
 
         {/* ── Admin Routes ─────────────────────────────── */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminDashboard /></ProtectedRoute>} />

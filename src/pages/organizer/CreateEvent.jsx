@@ -38,11 +38,35 @@ export default function CreateEvent() {
   };
 
   const handlePublish = async () => {
+    if (!form.title.trim()) { toast.error('Event title is required'); return; }
+    if (!form.start_date) { toast.error('Start date is required'); return; }
+
     setLoading(true);
     try {
-      await eventsAPI.create(form);
+      // Build ISO datetime from date + time fields
+      const startTime = form.start_time || '09:00';
+      const startDateTime = new Date(`${form.start_date}T${startTime}:00`);
+      // Default end_date to 8 hours after start
+      const endDateTime = new Date(startDateTime.getTime() + 8 * 60 * 60 * 1000);
+
+      // Map location_type to backend event_type enum
+      const typeMap = { Physical: 'physical', Virtual: 'virtual', Hybrid: 'hybrid' };
+
+      const payload = {
+        title: form.title,
+        description: form.description || null,
+        event_type: typeMap[form.location_type] || 'physical',
+        start_date: startDateTime.toISOString(),
+        end_date: endDateTime.toISOString(),
+        location_name: form.location || null,
+        max_attendees: form.max_attendees ? parseInt(form.max_attendees, 10) : null,
+        is_public: true,
+        tags: [],
+      };
+
+      await eventsAPI.create(payload);
       toast.success('Event created successfully!');
-      navigate('/events');
+      navigate('/organizer/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to create event');
     } finally {

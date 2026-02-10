@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card from '../../components/common/Card';
 import Badge from '../../components/common/Badge';
@@ -6,6 +7,9 @@ import Button from '../../components/common/Button';
 import ProgressBar from '../../components/common/ProgressBar';
 import KPICard from '../../components/common/KPICard';
 import Avatar from '../../components/common/Avatar';
+import { useAuth } from '../../context/AuthContext';
+import { eventsAPI, ticketsAPI, sessionsAPI } from '../../api';
+import toast from 'react-hot-toast';
 
 const DUTY_TIMELINE = [
   { time: '07:00 AM', title: 'Pre-Event Equipment Check', status: 'completed' },
@@ -23,6 +27,41 @@ const SUPPORT_REQUESTS = [
 ];
 
 export default function StaffDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [stats, setStats] = useState({ checkedIn: 0, totalReg: 0, totalEvents: 0, totalSessions: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const evRes = await eventsAPI.list({ limit: 100 });
+        const evts = evRes.data.events || evRes.data || [];
+        setEvents(evts);
+
+        let totalCheckedIn = 0;
+        let totalReg = 0;
+        let totalSessions = 0;
+        for (const ev of evts.slice(0, 5)) {
+          totalReg += ev.total_registrations || 0;
+          totalCheckedIn += ev.total_checked_in || 0;
+          totalSessions += ev.total_sessions || 0;
+        }
+        setStats({ checkedIn: totalCheckedIn, totalReg, totalEvents: evts.length, totalSessions });
+      } catch {
+        // fallback to demo data
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+    const interval = setInterval(loadData, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const arrivalRate = stats.totalReg > 0 ? ((stats.checkedIn / stats.totalReg) * 100).toFixed(1) : 0;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -30,7 +69,7 @@ export default function StaffDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-charcoal">Staff Operations</h1>
-            <p className="text-sm text-gray-500">DevCon 2024 — Marcus Chen, Zone Lead - Hall B</p>
+            <p className="text-sm text-gray-500">Welcome, {user?.first_name || 'Staff'} — {events.length > 0 ? events[0].title : 'NetSync Platform'}</p>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full">
             <span className="relative flex h-2 w-2">
@@ -43,53 +82,74 @@ export default function StaffDashboard() {
 
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card className="p-4">
+          <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/staff/attendance')}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-500">Checked-in</span>
               <span className="material-icons-outlined text-primary text-xl">how_to_reg</span>
             </div>
-            <p className="text-2xl font-bold text-charcoal">1,248</p>
-            <ProgressBar value={49.6} size="sm" color="primary" className="mt-2" />
+            <p className="text-2xl font-bold text-charcoal">{stats.checkedIn.toLocaleString()}</p>
+            <ProgressBar value={parseFloat(arrivalRate)} size="sm" color="primary" className="mt-2" />
           </Card>
-          <KPICard title="Total Expected" value="2,500" icon="groups" />
-          <Card className="p-4">
+          <KPICard title="Total Registrations" value={stats.totalReg.toLocaleString()} icon="groups" />
+          <Card className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/organizer/events')}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Active Support</span>
-              <Badge color="red">URGENT</Badge>
+              <span className="text-sm text-gray-500">Active Events</span>
+              <span className="material-icons-outlined text-primary text-xl">event</span>
             </div>
-            <p className="text-2xl font-bold text-charcoal">08</p>
-            <p className="text-xs text-gray-400 mt-1">Avg response: 2.4m</p>
+            <p className="text-2xl font-bold text-charcoal">{stats.totalEvents}</p>
+            <p className="text-xs text-gray-400 mt-1">Click to view all</p>
           </Card>
           <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-500">Arrival Rate</span>
               <span className="material-icons-outlined text-primary text-xl">trending_up</span>
             </div>
-            <p className="text-2xl font-bold text-charcoal">49.6%</p>
+            <p className="text-2xl font-bold text-charcoal">{arrivalRate}%</p>
             <div className="flex gap-0.5 mt-2">
               {[...Array(10)].map((_, i) => (
-                <div key={i} className={`h-2 flex-1 rounded-full ${i < 5 ? 'bg-primary' : 'bg-gray-200'}`} />
+                <div key={i} className={`h-2 flex-1 rounded-full ${i < Math.round(arrivalRate / 10) ? 'bg-primary' : 'bg-gray-200'}`} />
               ))}
             </div>
           </Card>
         </div>
 
+        {/* Quick Actions + Events */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left - QR Scanner & Duties */}
           <div className="lg:col-span-8 space-y-6">
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { icon: 'face', label: 'Face Check-in', path: '/staff/attendance', color: 'primary' },
+                { icon: 'event', label: 'View Events', path: '/organizer/events', color: 'blue-500' },
+                { icon: 'calendar_month', label: 'Sessions', path: '/organizer/sessions/scheduler', color: 'emerald-500' },
+                { icon: 'poll', label: 'Polls & Q&A', path: '/polls', color: 'purple-500' },
+              ].map((action) => (
+                <Card
+                  key={action.label}
+                  className="p-4 text-center cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5"
+                  onClick={() => navigate(action.path)}
+                >
+                  <div className={`w-12 h-12 bg-${action.color}/10 rounded-xl flex items-center justify-center mx-auto mb-2`}>
+                    <span className={`material-icons text-${action.color} text-2xl`}>{action.icon}</span>
+                  </div>
+                  <p className="text-xs font-medium text-charcoal">{action.label}</p>
+                </Card>
+              ))}
+            </div>
+
             {/* QR Scanner */}
-            <Card className="bg-gray-900 text-white p-8 text-center">
+            <Card className="bg-gray-900 text-white p-8 text-center cursor-pointer" onClick={() => navigate('/staff/attendance')}>
               <span className="material-icons text-6xl text-primary mb-4">qr_code_scanner</span>
               <h3 className="text-xl font-bold mb-2">Scan Attendee Badge</h3>
-              <p className="text-gray-400 text-sm mb-4">Point camera at QR code or use manual entry</p>
+              <p className="text-gray-400 text-sm mb-4">Point camera at QR code or use face recognition</p>
               <div className="flex gap-3 justify-center">
-                <Button size="sm" className="bg-primary/20 hover:bg-primary/30 border-none">
-                  <span className="material-icons text-sm mr-1">keyboard</span>
-                  Manual ID
+                <Button size="sm" className="bg-primary/20 hover:bg-primary/30 border-none" onClick={(e) => { e.stopPropagation(); navigate('/staff/attendance'); }}>
+                  <span className="material-icons text-sm mr-1">face</span>
+                  Face Check-in
                 </Button>
                 <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                  <span className="material-icons text-sm mr-1">person_add</span>
-                  Guest Invitation
+                  <span className="material-icons text-sm mr-1">keyboard</span>
+                  Manual ID
                 </Button>
               </div>
             </Card>

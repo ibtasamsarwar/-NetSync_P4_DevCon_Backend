@@ -1,116 +1,197 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import Card, { CardTitle } from '../../components/common/Card';
-import Toggle from '../../components/common/Toggle';
+import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { clsx } from 'clsx';
+import Toggle from '../../components/common/Toggle';
+import LoadingSpinner, { PageLoader } from '../../components/common/LoadingSpinner';
+import toast from 'react-hot-toast';
+import { usersAPI } from '../../api';
 
-const FONT_SIZES = ['Small', 'Medium', 'Large', 'Extra Large'];
-const COLOR_SCHEMES = [
-  { id: 'default', label: 'Default', colors: ['#f47b25', '#f8f7f5'] },
-  { id: 'high-contrast', label: 'High Contrast', colors: ['#000000', '#ffffff'] },
-  { id: 'blue', label: 'Blue Calm', colors: ['#3b82f6', '#f0f9ff'] },
-  { id: 'warm', label: 'Warm Tones', colors: ['#ef4444', '#fff7ed'] },
+const FONT_SIZES = [
+  { value: 14, label: 'Small' },
+  { value: 16, label: 'Medium (Default)' },
+  { value: 18, label: 'Large' },
+  { value: 20, label: 'Extra Large' },
 ];
 
-export default function AccessibilitySettings() {
-  const [fontSize, setFontSize] = useState('Medium');
-  const [colorScheme, setColorScheme] = useState('default');
-  const [settings, setSettings] = useState({
-    reduceMotion: false,
-    screenReader: false,
-    captions: true,
-    highContrast: false,
-    keyboardNav: true,
-    focusIndicators: true,
-  });
+const DEFAULT_SETTINGS = {
+  font_size: 16,
+  high_contrast: false,
+  screen_reader_mode: false,
+  voice_navigation: false,
+};
 
-  const toggle = (key) => setSettings({ ...settings, [key]: !settings[key] });
+export default function AccessibilitySettings() {
+  const [settings, setSettings] = useState({ ...DEFAULT_SETTINGS });
+  const [originalSettings, setOriginalSettings] = useState({ ...DEFAULT_SETTINGS });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
+    const changed =
+      settings.font_size !== originalSettings.font_size ||
+      settings.high_contrast !== originalSettings.high_contrast ||
+      settings.screen_reader_mode !== originalSettings.screen_reader_mode ||
+      settings.voice_navigation !== originalSettings.voice_navigation;
+    setHasChanges(changed);
+  }, [settings, originalSettings]);
+
+  const loadSettings = async () => {
+    setLoading(true);
+    try {
+      const res = await usersAPI.getProfile();
+      const user = res.data;
+      const loaded = {
+        font_size: user.font_size || DEFAULT_SETTINGS.font_size,
+        high_contrast: user.high_contrast || DEFAULT_SETTINGS.high_contrast,
+        screen_reader_mode: user.screen_reader_mode || DEFAULT_SETTINGS.screen_reader_mode,
+        voice_navigation: user.voice_navigation || DEFAULT_SETTINGS.voice_navigation,
+      };
+      setSettings(loaded);
+      setOriginalSettings(loaded);
+    } catch {
+      toast.error('Failed to load accessibility settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSettings = async () => {
+    setSaving(true);
+    try {
+      await usersAPI.updateAccessibility(settings);
+      setOriginalSettings({ ...settings });
+      toast.success('Accessibility settings saved');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetToDefaults = () => {
+    setSettings({ ...DEFAULT_SETTINGS });
+    toast('Settings reset to defaults — click Save to apply', { icon: '↩️' });
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <PageLoader />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-charcoal">Accessibility Settings</h1>
-          <p className="text-sm text-gray-500">Customize your experience for better accessibility</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-charcoal">Accessibility Settings</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Customize your experience to make NetSync more accessible
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={resetToDefaults} icon="restart_alt" size="sm">
+              Reset
+            </Button>
+            <Button onClick={saveSettings} loading={saving} disabled={!hasChanges} icon="save" size="sm">
+              Save
+            </Button>
+          </div>
         </div>
 
-        {/* Font size */}
+        {/* Font Size */}
         <Card className="p-6">
-          <CardTitle className="mb-4">Text Size</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="material-icons text-charcoal text-[20px]">text_fields</span>
+            <h2 className="text-lg font-semibold text-charcoal">Font Size</h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Adjust the base font size across the application
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {FONT_SIZES.map((size) => (
               <button
-                key={size}
-                onClick={() => setFontSize(size)}
-                className={clsx(
-                  'flex-1 py-3 rounded-xl text-sm font-medium transition-all',
-                  fontSize === size ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                )}
+                key={size.value}
+                onClick={() => setSettings((prev) => ({ ...prev, font_size: size.value }))}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition ${
+                  settings.font_size === size.value
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
               >
-                {size}
+                <span
+                  className="font-semibold text-charcoal"
+                  style={{ fontSize: `${size.value}px` }}
+                >
+                  Aa
+                </span>
+                <span className="text-xs text-gray-500">{size.label}</span>
+                <span className="text-xs text-gray-400">{size.value}px</span>
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Preview: The quick brown fox jumps over the lazy dog.</p>
-        </Card>
-
-        {/* Color schemes */}
-        <Card className="p-6">
-          <CardTitle className="mb-4">Color Scheme</CardTitle>
-          <div className="grid grid-cols-2 gap-3">
-            {COLOR_SCHEMES.map((scheme) => (
-              <button
-                key={scheme.id}
-                onClick={() => setColorScheme(scheme.id)}
-                className={clsx(
-                  'p-4 rounded-xl border-2 text-left transition-all',
-                  colorScheme === scheme.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
-                )}
-              >
-                <div className="flex gap-2 mb-2">
-                  {scheme.colors.map((c, i) => (
-                    <div key={i} className="w-6 h-6 rounded-full border border-gray-200" style={{ backgroundColor: c }} />
-                  ))}
-                </div>
-                <span className="text-sm font-medium text-charcoal">{scheme.label}</span>
-              </button>
-            ))}
+          {/* Preview */}
+          <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <p className="text-xs text-gray-400 mb-2">Preview:</p>
+            <p className="text-charcoal" style={{ fontSize: `${settings.font_size}px` }}>
+              This is how text will appear at {settings.font_size}px.
+            </p>
           </div>
         </Card>
 
-        {/* Toggles */}
-        <Card className="p-6">
-          <CardTitle className="mb-4">Accessibility Features</CardTitle>
-          <div className="space-y-4">
-            {[
-              { key: 'reduceMotion', icon: 'animation', title: 'Reduce Motion', desc: 'Minimize animations and transitions' },
-              { key: 'screenReader', icon: 'record_voice_over', title: 'Screen Reader Optimized', desc: 'Enhanced ARIA labels and landmarks' },
-              { key: 'captions', icon: 'closed_caption', title: 'Closed Captions', desc: 'Show captions for video and audio content' },
-              { key: 'highContrast', icon: 'contrast', title: 'High Contrast Mode', desc: 'Increase visual distinction between elements' },
-              { key: 'keyboardNav', icon: 'keyboard', title: 'Keyboard Navigation', desc: 'Enhanced keyboard shortcuts and tab navigation' },
-              { key: 'focusIndicators', icon: 'center_focus_strong', title: 'Focus Indicators', desc: 'Prominent focus outlines for interactive elements' },
-            ].map(({ key, icon, title, desc }) => (
-              <div key={key} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                    <span className="material-icons-outlined text-primary text-xl">{icon}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-charcoal">{title}</p>
-                    <p className="text-xs text-gray-500">{desc}</p>
-                  </div>
-                </div>
-                <Toggle checked={settings[key]} onChange={() => toggle(key)} />
-              </div>
-            ))}
+        {/* Toggle Settings */}
+        <Card className="p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-charcoal mb-2">Display &amp; Interaction</h2>
+
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <Toggle
+              checked={settings.high_contrast}
+              onChange={(v) => setSettings((prev) => ({ ...prev, high_contrast: v }))}
+              label="High Contrast Mode"
+              description="Increase contrast for better visibility"
+            />
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <Toggle
+              checked={settings.screen_reader_mode}
+              onChange={(v) => setSettings((prev) => ({ ...prev, screen_reader_mode: v }))}
+              label="Screen Reader Mode"
+              description="Optimize the interface for screen readers with enhanced ARIA labels"
+            />
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <Toggle
+              checked={settings.voice_navigation}
+              onChange={(v) => setSettings((prev) => ({ ...prev, voice_navigation: v }))}
+              label="Voice Navigation"
+              description="Enable voice commands for hands-free navigation"
+            />
           </div>
         </Card>
 
-        <div className="flex justify-end gap-3">
-          <Button variant="outline">Reset to Defaults</Button>
-          <Button>Save Preferences</Button>
-        </div>
+        {/* Unsaved changes indicator */}
+        {hasChanges && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-charcoal text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 z-50">
+            <span className="text-sm">You have unsaved changes</span>
+            <button
+              onClick={saveSettings}
+              disabled={saving}
+              className="px-3 py-1 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary-600 transition"
+            >
+              {saving ? 'Saving...' : 'Save Now'}
+            </button>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

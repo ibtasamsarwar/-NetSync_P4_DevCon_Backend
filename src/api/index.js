@@ -47,6 +47,7 @@ export const ticketsAPI = {
   eventRegistrations: (eventId, params) => api.get(`/tickets/event/${eventId}/registrations`, { params }),
   checkIn: (registrationId) => api.post('/tickets/check-in', { registration_id: registrationId }),
   updateSessions: (regId, sessionIds) => api.post(`/tickets/registrations/${regId}/sessions`, sessionIds),
+  getQRTicket: (registrationId) => api.get(`/tickets/my-qr/${registrationId}`),
 };
 
 export const pollsAPI = {
@@ -93,6 +94,7 @@ export const analyticsAPI = {
 
 export const networkingAPI = {
   matches: (eventId) => api.get(`/networking/matches/${eventId}`),
+  allUsers: (params) => api.get('/networking/all-users', { params }),
   connect: (data) => api.post('/networking/connect', data),
   connections: (eventId) => api.get('/networking/connections', { params: { event_id: eventId } }),
   acceptConnection: (id) => api.post(`/networking/connections/${id}/accept`),
@@ -106,6 +108,7 @@ export const adminAPI = {
   toggleUserStatus: (id, active) => api.put(`/admin/users/${id}/status`, null, { params: { active } }),
   systemAlerts: () => api.get('/admin/system/alerts'),
   deployment: () => api.get('/admin/deployment'),
+  exportUsers: (params) => api.get('/admin/users/export', { params, responseType: 'blob' }),
 };
 
 export const aiAPI = {
@@ -129,4 +132,24 @@ export const uploadsAPI = {
       params: { filename, content_type: contentType, folder },
     }),
   deleteFile: (key) => api.delete('/uploads/file', { params: { key } }),
+};
+
+export const attendanceAPI = {
+  enroll: (formData) =>
+    api.post('/attendance/enroll', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  enrollBulk: (formData) =>
+    api.post('/attendance/enroll-bulk', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  verify: (formData) =>
+    api.post('/attendance/verify', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  listEnrollments: (eventId, params) =>
+    api.get(`/attendance/enrollments/${eventId}`, { params }),
+  deleteEnrollment: (id) => api.delete(`/attendance/enrollments/${id}`),
+  getLog: (eventId, params) => api.get(`/attendance/log/${eventId}`, { params }),
+  getStats: (eventId) => api.get(`/attendance/stats/${eventId}`),
 };

@@ -4,8 +4,10 @@ import Card from '../../components/common/Card';
 import Badge from '../../components/common/Badge';
 import Avatar from '../../components/common/Avatar';
 import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
 import { useAuth } from '../../context/AuthContext';
-import { sessionsAPI, networkingAPI } from '../../api';
+import { sessionsAPI, networkingAPI, ticketsAPI, eventsAPI } from '../../api';
+import toast from 'react-hot-toast';
 
 const TIMELINE = [
   { time: '09:00 AM', title: 'Registration & Coffee', location: 'Lobby', status: 'completed', track: null },

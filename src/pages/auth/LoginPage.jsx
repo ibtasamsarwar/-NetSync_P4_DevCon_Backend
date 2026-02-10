@@ -227,179 +227,179 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          /* ── Login / Register Form ── */
           <div>
-          <div className="mb-10">
-          <h2 className="text-3xl font-bold text-charcoal mb-2">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
-          </h2>
-          <p className="text-gray-500">
-            {isLogin ? 'Access your professional dashboard.' : 'Join the NetSync community.'}
-          </p>
-        </div>
+            {/* Header */}
+            <div className="mb-10">
+              <h2 className="text-3xl font-bold text-charcoal mb-2">
+                {isLogin ? 'Welcome Back' : 'Create Account'}
+              </h2>
+              <p className="text-gray-500">
+                {isLogin ? 'Access your professional dashboard.' : 'Join the NetSync community.'}
+              </p>
+            </div>
 
-        {/* Role selector */}
-        <div className="mb-8">
-          <label className="block text-[11px] font-bold text-gray-400 mb-4 uppercase tracking-[0.15em]">
-            Select Your Role
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {ROLES.map((role) => {
-              const active = selectedRole === role.id;
-              return (
-                <button
-                  key={role.id}
-                  type="button"
-                  onClick={() => setSelectedRole(role.id)}
-                  className={clsx(
-                    'group relative flex flex-col items-center p-4 rounded-xl transition-all duration-200',
-                    active
-                      ? 'border-2 border-primary bg-primary/[0.03]'
-                      : 'border border-gray-200 hover:border-primary/40'
-                  )}
-                >
-                  <div
-                    className={clsx(
-                      'w-10 h-10 rounded-full flex items-center justify-center mb-2',
-                      active ? 'bg-primary/10' : 'bg-gray-50 group-hover:bg-primary/10'
-                    )}
-                  >
-                    <span
+            {/* Role selector */}
+            <div className="mb-8">
+              <label className="block text-[11px] font-bold text-gray-400 mb-4 uppercase tracking-[0.15em]">
+                Select Your Role
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {ROLES.map((role) => {
+                  const active = selectedRole === role.id;
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => setSelectedRole(role.id)}
                       className={clsx(
-                        'material-symbols-outlined transition-colors',
-                        active ? 'text-primary' : 'text-gray-400 group-hover:text-primary'
+                        'group relative flex flex-col items-center p-4 rounded-xl transition-all duration-200',
+                        active
+                          ? 'border-2 border-primary bg-primary/[0.03]'
+                          : 'border border-gray-200 hover:border-primary/40'
                       )}
                     >
-                      {role.icon}
-                    </span>
-                  </div>
-                  <span
-                    className={clsx(
-                      'text-xs transition-colors',
-                      active ? 'font-bold text-primary' : 'font-semibold text-gray-600 group-hover:text-primary'
-                    )}
-                  >
-                    {role.label}
-                  </span>
-                  {active && (
-                    <div className="absolute top-2 right-2">
-                      <span className="material-icons text-primary text-[16px]">check_circle</span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {!isLogin && (
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="First Name"
-                name="first_name"
-                value={form.first_name}
-                onChange={handleChange}
-                placeholder="John"
-                required
-              />
-              <Input
-                label="Last Name"
-                name="last_name"
-                value={form.last_name}
-                onChange={handleChange}
-                placeholder="Doe"
-                required
-              />
-            </div>
-          )}
-          <Input
-            label="Email Address"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="name@company.com"
-            required
-          />
-          <div>
-            {isLogin && (
-              <div className="flex justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <Link to="/auth/forgot-password" className="text-xs font-semibold text-primary hover:opacity-80">
-                  Forgot password?
-                </Link>
+                      <div
+                        className={clsx(
+                          'w-10 h-10 rounded-full flex items-center justify-center mb-2',
+                          active ? 'bg-primary/10' : 'bg-gray-50 group-hover:bg-primary/10'
+                        )}
+                      >
+                        <span
+                          className={clsx(
+                            'material-symbols-outlined transition-colors',
+                            active ? 'text-primary' : 'text-gray-400 group-hover:text-primary'
+                          )}
+                        >
+                          {role.icon}
+                        </span>
+                      </div>
+                      <span
+                        className={clsx(
+                          'text-xs transition-colors',
+                          active ? 'font-bold text-primary' : 'font-semibold text-gray-600 group-hover:text-primary'
+                        )}
+                      >
+                        {role.label}
+                      </span>
+                      {active && (
+                        <div className="absolute top-2 right-2">
+                          <span className="material-icons text-primary text-[16px]">check_circle</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-            <Input
-              label={isLogin ? undefined : 'Password'}
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          {!isLogin && (
-            <Input
-              label="Confirm Password"
-              name="confirm_password"
-              type="password"
-              value={form.confirm_password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              required
-            />
-          )}
-          <Button type="submit" className="w-full py-4 mt-2" loading={loading}>
-            {isLogin ? 'Sign In' : 'Create Account'}
-          </Button>
-        </form>
+            </div>
 
-        {/* Divider */}
-        <div className="mt-8 relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-100" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase tracking-widest">
-            <span className="px-4 bg-surface text-gray-400">Quick Access</span>
-          </div>
-        </div>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {!isLogin && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="First Name"
+                    name="first_name"
+                    value={form.first_name}
+                    onChange={handleChange}
+                    placeholder="John"
+                    required
+                  />
+                  <Input
+                    label="Last Name"
+                    name="last_name"
+                    value={form.last_name}
+                    onChange={handleChange}
+                    placeholder="Doe"
+                    required
+                  />
+                </div>
+              )}
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="name@company.com"
+                required
+              />
+              <div>
+                {isLogin && (
+                  <div className="flex justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">Password</label>
+                    <Link to="/auth/forgot-password" className="text-xs font-semibold text-primary hover:opacity-80">
+                      Forgot password?
+                    </Link>
+                  </div>
+                )}
+                <Input
+                  label={isLogin ? undefined : 'Password'}
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              {!isLogin && (
+                <Input
+                  label="Confirm Password"
+                  name="confirm_password"
+                  type="password"
+                  value={form.confirm_password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                />
+              )}
+              <Button type="submit" className="w-full py-4 mt-2" loading={loading}>
+                {isLogin ? 'Sign In' : 'Create Account'}
+              </Button>
+            </form>
 
-        {/* Demo button */}
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-primary/30 hover:bg-gray-50 text-gray-700 font-semibold py-4 px-4 rounded-xl transition-all group"
-          >
-            <span className="material-symbols-outlined text-primary">play_circle</span>
-            Continue as Demo User
-          </button>
-        </div>
+            {/* Divider */}
+            <div className="mt-8 relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase tracking-widest">
+                <span className="px-4 bg-surface text-gray-400">Quick Access</span>
+              </div>
+            </div>
 
-        {/* Toggle form */}
-        <div className="mt-10 text-center">
-          <p className="text-sm text-gray-500">
-            {isLogin ? 'New to the community?' : 'Already have an account?'}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="font-bold text-primary hover:opacity-80 ml-1 transition-opacity"
-            >
-              {isLogin ? 'Create Account' : 'Sign In'}
-            </button>
-          </p>
-        </div>
+            {/* Demo button */}
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                className="w-full flex items-center justify-center gap-2 border border-gray-200 hover:border-primary/30 hover:bg-gray-50 text-gray-700 font-semibold py-4 px-4 rounded-xl transition-all group"
+              >
+                <span className="material-symbols-outlined text-primary">play_circle</span>
+                Continue as Demo User
+              </button>
+            </div>
 
-        {/* Footer links */}
-        <div className="mt-16 pt-8 border-t border-gray-100 flex flex-wrap justify-center gap-8 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-          <a href="#" className="hover:text-primary transition-colors">Privacy</a>
-          <a href="#" className="hover:text-primary transition-colors">Terms</a>
-          <a href="#" className="hover:text-primary transition-colors">Help</a>
-        </div>
+            {/* Toggle form */}
+            <div className="mt-10 text-center">
+              <p className="text-sm text-gray-500">
+                {isLogin ? 'New to the community?' : 'Already have an account?'}
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="font-bold text-primary hover:opacity-80 ml-1 transition-opacity"
+                >
+                  {isLogin ? 'Create Account' : 'Sign In'}
+                </button>
+              </p>
+            </div>
+
+            {/* Footer links */}
+            <div className="mt-16 pt-8 border-t border-gray-100 flex flex-wrap justify-center gap-8 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+              <a href="#" className="hover:text-primary transition-colors">Privacy</a>
+              <a href="#" className="hover:text-primary transition-colors">Terms</a>
+              <a href="#" className="hover:text-primary transition-colors">Help</a>
+            </div>
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import KPICard from '../../components/common/KPICard';
 import Card, { CardHeader, CardTitle } from '../../components/common/Card';
@@ -11,6 +12,7 @@ const CHART_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
 
 export default function AnalyticsDashboard() {
+  const navigate = useNavigate();
   const [kpis, setKpis] = useState({
     total_events: 24, registrations: 12450, revenue: 45200, attendance_rate: 88,
   });
@@ -26,7 +28,15 @@ export default function AnalyticsDashboard() {
       if (res.data) setKpis(res.data);
     }).catch(() => {});
     eventsAPI.list({ limit: 5 }).then((res) => {
-      if (res.data?.events?.length) setEvents(res.data.events);
+      if (res.data?.events?.length) {
+        setEvents(res.data.events.map(evt => ({
+          name: evt.title || evt.name,
+          status: evt.status === 'published' ? 'active' : evt.status,
+          date: evt.start_date ? new Date(evt.start_date).toLocaleDateString() : '',
+          registrations: evt.total_registrations || 0,
+          capacity: evt.max_attendees || 100,
+        })));
+      }
     }).catch(() => {});
   }, []);
 
@@ -123,7 +133,7 @@ export default function AnalyticsDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Events</CardTitle>
-            <Button variant="outline" size="sm">View All</Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/organizer/events')}>View All</Button>
           </CardHeader>
           <div className="overflow-x-auto mt-4">
             <table className="w-full text-sm">

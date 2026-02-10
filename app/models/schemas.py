@@ -1,11 +1,13 @@
 from pydantic import BaseModel, EmailStr, Field
 
 class OrganizerSignupRequest(BaseModel):
+    full_name: str = Field(min_length=2, max_length=120)
     email: EmailStr
     password: str
     org_name: str = Field(min_length=2, max_length=120)
 
 class AttendeeSignupRequest(BaseModel):
+    full_name: str = Field(min_length=2, max_length=120)
     email: EmailStr
     password: str
     tenant_id: str | None = None

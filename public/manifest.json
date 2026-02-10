@@ -1,0 +1,9 @@
+{
+  "short_name": "NetSync",
+  "name": "NetSync - Smart Event Management",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#f47b25",
+  "background_color": "#f8f7f5",
+  "icons": []
+}

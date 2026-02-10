@@ -45,6 +45,7 @@ async def signup_organizer(
     otp = generate_otp_code()
 
     user = {
+        "full_name": payload.full_name,
         "email": email,
         "hashed_password": hash_password(payload.password),
         "role": "organizer",
@@ -102,6 +103,7 @@ async def signup_attendee(
     otp = generate_otp_code()
 
     user = {
+        "full_name": payload.full_name,
         "email": email,
         "hashed_password": hash_password(payload.password),
         "role": "attendee",

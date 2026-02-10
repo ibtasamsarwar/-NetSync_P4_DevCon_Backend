@@ -62,10 +62,25 @@ async def signup_organizer(
         raise HTTPException(status_code=409, detail="Email already registered")
 
     bg.add_task(
-        send_email,
-        email,
-        "NetSync Verification Code",
-        f"Your verification code is {otp}",
+    send_email,
+    email,
+    "Verify Your Email – NetSync",
+    f"""
+    Welcome to NetSync 👋
+
+    We're excited to have you on board.
+
+    To complete your email verification, please enter the code below:
+
+    🔐 Verification Code: {otp}
+
+    ⏳ This code is valid for the next {EMAIL_OTP_TTL_MINUTES} minutes.
+
+    If you didn’t request this verification, no action is required.
+
+    Cheers,  
+    The NetSync Team
+    """
     )
 
     return {
@@ -103,10 +118,25 @@ async def signup_attendee(
         raise HTTPException(status_code=409, detail="Email already registered")
 
     bg.add_task(
-        send_email,
-        email,
-        "NetSync Verification Code",
-        f"Your verification code is {otp}",
+    send_email,
+    email,
+    "Verify Your Email – NetSync",
+    f"""
+    Welcome to NetSync 👋
+
+    We're excited to have you on board.
+
+    To complete your email verification, please enter the code below:
+
+    🔐 Verification Code: {otp}
+
+    ⏳ This code is valid for the next {EMAIL_OTP_TTL_MINUTES} minutes.
+
+    If you didn’t request this verification, no action is required.
+
+    Cheers,  
+    The NetSync Team
+    """
     )
 
     return {"message": "Attendee created. Verify email."}
